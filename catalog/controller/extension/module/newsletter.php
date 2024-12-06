@@ -3,10 +3,18 @@ class ControllerExtensionModuleNewsletter extends Controller {
 	public function index($setting) {
 		$this->load->language('extension/module/newsletter');
 
+		$this->document->addStyle('catalog/view/theme/default/stylesheet/extension/module/newsletter.css');
+
 		$this->load->model('tool/image');
 
+		if (!$setting['name']) {
+			$data['name'] = "Newsletter";
+		}else{
+			$data['name'] = $setting['name'];
+		}
+
 		if (!$setting['title']) {
-			$data['title'] = "Newsletter";
+			$data['title'] = "INSCREVA-SE E FIQUE POR DENTRO DE NOSSAS <em>NOVIDADES, OFERTAS ESPECIAIS</em> E MUITO MAIS!";
 		}else{
 			$data['title'] = $setting['title'];
 		}
