@@ -4,17 +4,25 @@
       <div class="col-sm-12 col-md-12">
         <div class="row">
           <div class="sub-col col-sm-12 col-md-12">
-            <div class="newsletter-container newsletter-block">
+            <div class="newsletter-container newsletter-block" id="newsletter-module">
               <div class="block-title text-center">
                 <h2>{{ name }}</h2>
-                <h4>{{ description }}</h4>
+                <h4>{{ title }}</h4>
               </div>
               <div class="newsletter-content">
                 <div class="content">
-                  <input type="email" class="newsletter_email" name="email" id="email" placeholder="{{ placeholder }}" style="height: 42px;" required>
-                  <div class="text-danger" id="msgemail"></div>
-                  <button type="button" id="button" class="btn btn-success btn-lg">{{ button }}</button>
+                  <input type="email" class="newsletter_email" name="email" id="newsletter-email" placeholder="{{ placeholder }}" required>
+                  <button type="button" id="newsletter-button" class="btn btn-success btn-lg">
+                    <span class="btn-text">{{ button }}</span>
+                    <span class="btn-loading d-none">
+                      <i class="fa fa-spinner fa-spin"></i> {{ text_loading }}
+                    </span>
+                  </button>
                 </div>
+                <div class="newsletter-message" id="newsletter-message"></div>
+              </div>
+              <div class="block-title text-center">
+                <h5>{{ description }}</h5>
               </div>
             </div>
           </div>
@@ -22,39 +30,86 @@
       </div>
     </div>
   </div>
+
   <script type="text/javascript">
-
-    $('#button').on('click',function (request, response) {
-
-        var email = $("#email").val();
-
-        var verifica_email = email.split("@");
-
-        if ( typeof verifica_email[1] !== 'undefined'){
-
-          $.ajax({
-            url: 'index.php?route=extension/module/newsletter/cadastrar&user_token={{ user_token }}&filter_name=' +  encodeURIComponent(request),
-            type: 'post',
-            data: 'email=' + email,
-            dataType: 'json',
-            success: function(json) {
-              document.getElementById('email').value='';
-              document.getElementById("msgemail").innerHTML="<font color='green'>E-mail Cadastrado </font>";
-              
-            },
-            error: function(result){
-                alert("Error");
-            }
-          });
-
-        }else{
-
-          document.getElementById("msgemail").innerHTML="<font color='red'>E-mail inválido </font>";
-          document.getElementById('email').value='';
-          
-        }    
+    $(document).ready(function() {
+      const emailInput = $('#newsletter-email');
+      const submitButton = $('#newsletter-button');
+      const messageContainer = $('#newsletter-message');
+      const btnText = submitButton.find('.btn-text');
+      const btnLoading = submitButton.find('.btn-loading');
+      
+      function isValidEmail(email) {
+        return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+      }
+      
+      function showMessage(message, type) {
+        messageContainer.removeClass('success error info').addClass(type).html(message).show();
+      }
+      
+      function clearMessage() {
+        messageContainer.empty().hide();
+      }
+      
+      function toggleButtonLoading(loading) {
+        submitButton.prop('disabled', loading);
+        btnText.toggleClass('d-none', loading);
+        btnLoading.toggleClass('d-none', !loading);
+      }
+      
+      emailInput.on('input', clearMessage);
+      
+      emailInput.on('blur', function() {
+        const email = $(this).val().trim();
+        if (email && !isValidEmail(email)) {
+          showMessage('{{ error_email_invalid }}', 'error');
+        } else {
+          clearMessage();
+        }
+      });
+      
+      submitButton.on('click', function(e) {
+        e.preventDefault();
+        const email = emailInput.val().trim();
+        
+        clearMessage();
+        
+        if (!email) {
+          showMessage('{{ error_email_required }}', 'error');
+          emailInput.focus();
+          return;
+        }
+        
+        if (!isValidEmail(email)) {
+          showMessage('{{ error_email_invalid }}', 'error');
+          emailInput.focus();
+          return;
+        }
+        
+        $.ajax({
+          url: 'index.php?route=extension/module/newsletter/register',
+          type: 'post',
+          data: 'email=' + encodeURIComponent(email),
+          dataType: 'json',
+          beforeSend: function() { toggleButtonLoading(true); },
+          success: function(json) {
+            toggleButtonLoading(false);
             
+            if (json && Array.isArray(json) && json.length > 0) {
+              if (json[0].status === 'created') {
+                emailInput.val('');
+                showMessage('{{ text_success }}', 'success');
+              } else if (json[0].status === 'error') {
+                showMessage(json[0].message, 'error');
+              }
+            }
+          },
+          error: function(xhr, status) {
+            toggleButtonLoading(false);
+            showMessage('{{ error_general }}', 'error');
+          }
+        });
+      });
     });
-
   </script>
 </div>
