@@ -123,30 +123,24 @@ class ControllerExtensionModuleNewsletter extends Controller {
 			$data['button'] = 'Enviar';
 		}
 
-		$this->load->model('extension/module/newsletter');
-	
+		$this->load->model('extension/module/newsletter');	
 
 		$data['emails'] = array();
 
-		$verifica_existe = $this->model_extension_module_newsletter->verificaTabela();
+		$verifica_existe = $this->model_extension_module_newsletter->checkTable();
 
 		if(count($verifica_existe) >= 1 ){
-
 			$emails = $this->model_extension_module_newsletter->getEmail();
 
 			foreach ($emails as $item) {
-
 				$data['emails'][] = array(
 					'email' => $item['email'],
 					'data'  => $item['created'] 
-				);
-			
+				);			
 			}
 		}else{
 			$data['emails'] = "";
-		}
-
-		
+		}		
 
 		if (isset($this->request->post['status'])) {
 			$data['status'] = $this->request->post['status'];
@@ -181,5 +175,10 @@ class ControllerExtensionModuleNewsletter extends Controller {
 		}
 
 		return !$this->error;
+	}
+
+	public function install() {
+		$this->load->model('extension/module/newsletter');
+		$this->model_extension_module_newsletter->install();
 	}
 }
